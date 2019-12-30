@@ -82,9 +82,11 @@
 
     <p>看到<a href="https://github.com/aymericdamien/TensorFlow-Examples/blob/master/examples/3_NeuralNetworks/convolutional_network.py">有人</a>结合variable scope来用tf.layers.xx，不知道能不能复用。</p>
 
-    <p>看tf.keras的<a href="https://github.com/tensorflow/tensorflow/blob/r1.15/tensorflow/python/keras/engine/base_layer_utils.py#L63">源码(tf1.15)</a>，好像是不行，可能更早版本的tf.layers.xx不是用keras吧？</p>
+    <p><strong>更正一下</strong></p>
 
-    <p>看了下<a href="https://github.com/tensorflow/tensorflow/blob/r1.4/tensorflow/python/layers/base.py#L453">tf1.4</a>还没集成keras的时候，确实是用的get_variable，有空再写个实验看看吧</p>
+    <p>tf.keras.layers的add_weights会使用vs.get_variable,所以重进scope的时候，能获取之前定义的变量，实现参数共享。</p>
+
+    <p>如果不手动定义vs的话，会新生成一个参数变量，按照重命名规则+’_1’</p>
   </li>
   <li>
     <p>tf.keras.layers.xx:</p>

@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.6.1 -->
+<title>tf mode 指定方式 | Under the oceans</title>
+<meta name="generator" content="Jekyll v3.8.6" />
+<meta property="og:title" content="tf mode 指定方式" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="是在看tf2.0的文档的时候，tutorial里没用training，导致我去翻例子，干脆把1.x也理一遍。" />
+<meta property="og:description" content="是在看tf2.0的文档的时候，tutorial里没用training，导致我去翻例子，干脆把1.x也理一遍。" />
+<link rel="canonical" href="https://k0kutou.github.io/tf/2019/12/27/tf-mode-config.html" />
+<meta property="og:url" content="https://k0kutou.github.io/tf/2019/12/27/tf-mode-config.html" />
+<meta property="og:site_name" content="Under the oceans" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2019-12-27T22:28:17+08:00" />
+<script type="application/ld+json">
+{"@type":"BlogPosting","headline":"tf mode 指定方式","dateModified":"2019-12-27T22:28:17+08:00","datePublished":"2019-12-27T22:28:17+08:00","url":"https://k0kutou.github.io/tf/2019/12/27/tf-mode-config.html","mainEntityOfPage":{"@type":"WebPage","@id":"https://k0kutou.github.io/tf/2019/12/27/tf-mode-config.html"},"description":"是在看tf2.0的文档的时候，tutorial里没用training，导致我去翻例子，干脆把1.x也理一遍。","@context":"https://schema.org"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/assets/main.css"><link type="application/atom+xml" rel="alternate" href="https://k0kutou.github.io/feed.xml" title="Under the oceans" /></head>
+<body><header class="site-header" role="banner">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">Under the oceans</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/about/">About</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">tf mode 指定方式</h1>
+    <p class="post-meta">
+      <time class="dt-published" datetime="2019-12-27T22:28:17+08:00" itemprop="datePublished">Dec 27, 2019
+      </time></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p>是在看tf2.0的文档的时候，tutorial里没用training，导致我去翻例子，干脆把1.x也理一遍。</p>
+
+<p>有空再补代码例子，因为是短时间稍微写了一下，不是很详细，有例子应该会清楚很多。</p>
+
+<h3 id="tldr">tl;dr</h3>
+
+<p>总共就这么短就没有tldr了。。</p>
+
+<p>简单说就是：</p>
+
+<blockquote>
+  <p>可以在构建图的时候静态指定training或者run session的时候传入placeholder</p>
+</blockquote>
+
+<p>只不过tf调用方式本身的多样性导致了问题的复杂，有空单独写一个tf调用方式的总结。</p>
+
+<h3 id="正文">正文</h3>
+
+<p>用keras时，不用关心，在fit和predict函数里自动设置。</p>
+
+<p>tf2.0 里keras的model.fit好像也支持dict类型的输入了，一般用fit就够了</p>
+
+<h3 id="tf-10-的两种接口">tf 1.0 的两种接口</h3>
+
+<ul>
+  <li>
+    <p>tf.nn.xx：</p>
+
+    <p>算子接口，不带变量，典型场景是使用下面第一种方式调用；</p>
+  </li>
+  <li>
+    <p>tf.layers.xx:</p>
+
+    <p>算子内生成变量，tf.layers.Xx只是keras.layers封装了一个名字；tf.layers.xx比较尴尬，调用的时候生成对应的算子对象然后apply，别用这类接口了，1.x高版本里大部分都被干掉了。目前全面移到tf.keras.layers.</p>
+
+    <p>看到<a href="https://github.com/aymericdamien/TensorFlow-Examples/blob/master/examples/3_NeuralNetworks/convolutional_network.py">有人</a>结合variable scope来用tf.layers.xx，不知道能不能复用。</p>
+
+    <p>看tf.keras的<a href="https://github.com/tensorflow/tensorflow/blob/r1.15/tensorflow/python/keras/engine/base_layer_utils.py#L63">源码(tf1.15)</a>，好像是不行，可能更早版本的tf.layers.xx不是用keras吧？</p>
+
+    <p>看了下<a href="https://github.com/tensorflow/tensorflow/blob/r1.4/tensorflow/python/layers/base.py#L453">tf1.4</a>还没集成keras的时候，确实是用的get_variable，有空再写个实验看看吧</p>
+  </li>
+  <li>
+    <p>tf.keras.layers.xx:</p>
+
+    <p>自带变量，training是个tensor，动态判断。手动训练的时候，在session里传入K.learning_phase()生成的placeholder</p>
+  </li>
+</ul>
+
+<h3 id="tf不同使用方式的mode指定方式">tf不同使用方式的mode指定方式</h3>
+
+<p>tf2.0的官方建议的<a href="https://medium.com/tensorflow/standardizing-on-keras-guidance-on-high-level-apis-in-tensorflow-2-0-bad2b04c819a">几种调用方式</a>，都是keras的，这里列一下更一般的方法。</p>
+
+<ol>
+  <li>
+    <p>variable scope</p>
+
+    <p>tf1的经典调用方式，虽然官方没有建议，但是一些老项目还是用的很多的，纯种tf调用方式。</p>
+
+    <ul>
+      <li>
+        <p>变量作用域都是用“tf语言”定义和管理的。</p>
+      </li>
+      <li>
+        <p>用get_variable(…, reuse=tf.AUTO_REUSE)的方式共享变量</p>
+      </li>
+      <li>
+        <p>为train和infer分别构建图，用共享变量来共享参数，在构造图时传training参数（这是一个python变量）静态指定</p>
+      </li>
+    </ul>
+
+    <p><strong>算子和变量是分离的</strong></p>
+
+    <p>和上面tf.layers.xx方式不同，算子和变量是分离的，可以用不同的参数构造任意个算子，并且共享变量。</p>
+  </li>
+  <li>
+    <p>object oriented</p>
+
+    <p>用python的对象来管理scope，把算子或者tf变量定义成类属性。</p>
+
+    <p>这种方式用现成的layers比较多，虽然也可以用定义tf变量的方式，但是搭tf.keras.layers使用，可以少写很多变量定义的代码。</p>
+
+    <p><strong>tf.layers.xx和tf.keras.layers里算子和变量是绑定的</strong></p>
+
+    <p>“用相同的一批算子，定义train和infer图”</p>
+
+    <p>有两种方式指定mode：</p>
+
+    <ul>
+      <li>
+        <p>train/infer混用图，在session.run的时候通过给training这个tensor（tf.keras.layers.xx根据K.learning_phase()定义行为）传入不同的值来动态指定“同一个算子”的不同行为</p>
+      </li>
+      <li>
+        <p>用相同的一批算子，分别定义train和infer图（和第一种vs类似），定义图的时候，算子的apply()函数可以静态指定training（python变量）。这种方式个人感觉只是比vs方式少写一点变量定义的代码。</p>
+      </li>
+    </ul>
+  </li>
+  <li>
+    <p>tf 2.0 eager模式</p>
+
+    <p>用默认的eager模式几乎和pytorch一样了，并且可以用tf.function加速，非常方便，除了库代码不好读。
+ 和pytorch的接口稍微有点区别，</p>
+
+    <ul>
+      <li>pytorch:
+        <div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code> <span class="n">model</span><span class="o">.</span><span class="n">train</span><span class="p">()</span>
+ <span class="o">...</span>
+</code></pre></div>        </div>
+      </li>
+      <li>tf2:
+        <div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code> <span class="n">model</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">training</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+</code></pre></div>        </div>
+      </li>
+    </ul>
+
+    <p>答应我一定要手动指定，不要只看官方手册，官方的example repo有<a href="https://github.com/tensorflow/examples/blob/master/tensorflow_examples/models/dcgan/dcgan.py">完整例子</a></p>
+  </li>
+</ol>
+
+
+  </div><a class="u-url" href="/tf/2019/12/27/tf-mode-config.html" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">Under the oceans</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li class="p-name">Under the oceans</li></ul>
+      </div>
+
+      <div class="footer-col footer-col-2"><ul class="social-media-list"></ul>
+</div>
+
+      <div class="footer-col footer-col-3">
+        <p>A place for shower thoughts and memos.</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>

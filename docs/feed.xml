@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="3.8.5">Jekyll</generator><link href="http://localhost:4000/feed.xml" rel="self" type="application/atom+xml" /><link href="http://localhost:4000/" rel="alternate" type="text/html" /><updated>2019-12-30T15:10:52+08:00</updated><id>http://localhost:4000/feed.xml</id><title type="html">Under the oceans</title><subtitle>A place for shower thoughts and memos.</subtitle><entry><title type="html">tf mode 指定方式</title><link href="http://localhost:4000/tf/2019/12/27/tf-mode-config.html" rel="alternate" type="text/html" title="tf mode 指定方式" /><published>2019-12-27T22:28:17+08:00</published><updated>2019-12-27T22:28:17+08:00</updated><id>http://localhost:4000/tf/2019/12/27/tf-mode-config</id><content type="html" xml:base="http://localhost:4000/tf/2019/12/27/tf-mode-config.html">&lt;p&gt;是在看tf2.0的文档的时候，tutorial里没用training，导致我去翻例子，干脆把1.x也理一遍。&lt;/p&gt;
+
+&lt;p&gt;有空再补代码例子，因为是短时间稍微写了一下，不是很详细，有例子应该会清楚很多。&lt;/p&gt;
+
+&lt;h3 id=&quot;tldr&quot;&gt;tl;dr&lt;/h3&gt;
+
+&lt;p&gt;总共就这么短就没有tldr了。。&lt;/p&gt;
+
+&lt;p&gt;简单说就是：&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;可以在构建图的时候静态指定training或者run session的时候传入placeholder&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;只不过tf调用方式本身的多样性导致了问题的复杂，有空单独写一个tf调用方式的总结。&lt;/p&gt;
+
+&lt;h3 id=&quot;正文&quot;&gt;正文&lt;/h3&gt;
+
+&lt;p&gt;用keras时，不用关心，在fit和predict函数里自动设置。&lt;/p&gt;
+
+&lt;p&gt;tf2.0 里keras的model.fit好像也支持dict类型的输入了，一般用fit就够了&lt;/p&gt;
+
+&lt;h3 id=&quot;tf-10-的两种接口&quot;&gt;tf 1.0 的两种接口&lt;/h3&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;
+    &lt;p&gt;tf.nn.xx：&lt;/p&gt;
+
+    &lt;p&gt;算子接口，不带变量，典型场景是使用下面第一种方式调用；&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;tf.layers.xx:&lt;/p&gt;
+
+    &lt;p&gt;算子内生成变量，tf.layers.Xx只是keras.layers封装了一个名字；tf.layers.xx比较尴尬，调用的时候生成对应的算子对象然后apply，别用这类接口了，1.x高版本里大部分都被干掉了。目前全面移到tf.keras.layers.&lt;/p&gt;
+
+    &lt;p&gt;看到&lt;a href=&quot;https://github.com/aymericdamien/TensorFlow-Examples/blob/master/examples/3_NeuralNetworks/convolutional_network.py&quot;&gt;有人&lt;/a&gt;结合variable scope来用tf.layers.xx，不知道能不能复用。&lt;/p&gt;
+
+    &lt;p&gt;看tf.keras的&lt;a href=&quot;https://github.com/tensorflow/tensorflow/blob/r1.15/tensorflow/python/keras/engine/base_layer_utils.py#L63&quot;&gt;源码(tf1.15)&lt;/a&gt;，好像是不行，可能更早版本的tf.layers.xx不是用keras吧？&lt;/p&gt;
+
+    &lt;p&gt;看了下&lt;a href=&quot;https://github.com/tensorflow/tensorflow/blob/r1.4/tensorflow/python/layers/base.py#L453&quot;&gt;tf1.4&lt;/a&gt;还没集成keras的时候，确实是用的get_variable，有空再写个实验看看吧&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;tf.keras.layers.xx:&lt;/p&gt;
+
+    &lt;p&gt;自带变量，training是个tensor，动态判断。手动训练的时候，在session里传入K.learning_phase()生成的placeholder&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h3 id=&quot;tf不同使用方式的mode指定方式&quot;&gt;tf不同使用方式的mode指定方式&lt;/h3&gt;
+
+&lt;p&gt;tf2.0的官方建议的&lt;a href=&quot;https://medium.com/tensorflow/standardizing-on-keras-guidance-on-high-level-apis-in-tensorflow-2-0-bad2b04c819a&quot;&gt;几种调用方式&lt;/a&gt;，都是keras的，这里列一下更一般的方法。&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;
+    &lt;p&gt;variable scope&lt;/p&gt;
+
+    &lt;p&gt;tf1的经典调用方式，虽然官方没有建议，但是一些老项目还是用的很多的，纯种tf调用方式。&lt;/p&gt;
+
+    &lt;ul&gt;
+      &lt;li&gt;
+        &lt;p&gt;变量作用域都是用“tf语言”定义和管理的。&lt;/p&gt;
+      &lt;/li&gt;
+      &lt;li&gt;
+        &lt;p&gt;用get_variable(…, reuse=tf.AUTO_REUSE)的方式共享变量&lt;/p&gt;
+      &lt;/li&gt;
+      &lt;li&gt;
+        &lt;p&gt;为train和infer分别构建图，用共享变量来共享参数，在构造图时传training参数（这是一个python变量）静态指定&lt;/p&gt;
+      &lt;/li&gt;
+    &lt;/ul&gt;
+
+    &lt;p&gt;&lt;strong&gt;算子和变量是分离的&lt;/strong&gt;&lt;/p&gt;
+
+    &lt;p&gt;和上面tf.layers.xx方式不同，算子和变量是分离的，可以用不同的参数构造任意个算子，并且共享变量。&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;object oriented&lt;/p&gt;
+
+    &lt;p&gt;用python的对象来管理scope，把算子或者tf变量定义成类属性。&lt;/p&gt;
+
+    &lt;p&gt;这种方式用现成的layers比较多，虽然也可以用定义tf变量的方式，但是搭tf.keras.layers使用，可以少写很多变量定义的代码。&lt;/p&gt;
+
+    &lt;p&gt;&lt;strong&gt;tf.layers.xx和tf.keras.layers里算子和变量是绑定的&lt;/strong&gt;&lt;/p&gt;
+
+    &lt;p&gt;“用相同的一批算子，定义train和infer图”&lt;/p&gt;
+
+    &lt;p&gt;有两种方式指定mode：&lt;/p&gt;
+
+    &lt;ul&gt;
+      &lt;li&gt;
+        &lt;p&gt;train/infer混用图，在session.run的时候通过给training这个tensor（tf.keras.layers.xx根据K.learning_phase()定义行为）传入不同的值来动态指定“同一个算子”的不同行为&lt;/p&gt;
+      &lt;/li&gt;
+      &lt;li&gt;
+        &lt;p&gt;用相同的一批算子，分别定义train和infer图（和第一种vs类似），定义图的时候，算子的apply()函数可以静态指定training（python变量）。这种方式个人感觉只是比vs方式少写一点变量定义的代码。&lt;/p&gt;
+      &lt;/li&gt;
+    &lt;/ul&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;tf 2.0 eager模式&lt;/p&gt;
+
+    &lt;p&gt;用默认的eager模式几乎和pytorch一样了，并且可以用tf.function加速，非常方便，除了库代码不好读。
+ 和pytorch的接口稍微有点区别，&lt;/p&gt;
+
+    &lt;ul&gt;
+      &lt;li&gt;pytorch:
+        &lt;div class=&quot;language-python highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt; &lt;span class=&quot;n&quot;&gt;model&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;train&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt;
+ &lt;span class=&quot;o&quot;&gt;...&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;        &lt;/div&gt;
+      &lt;/li&gt;
+      &lt;li&gt;tf2:
+        &lt;div class=&quot;language-python highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt; &lt;span class=&quot;n&quot;&gt;model&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;x&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;training&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;bp&quot;&gt;True&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;        &lt;/div&gt;
+      &lt;/li&gt;
+    &lt;/ul&gt;
+
+    &lt;p&gt;答应我一定要手动指定，不要只看官方手册，官方的example repo有&lt;a href=&quot;https://github.com/tensorflow/examples/blob/master/tensorflow_examples/models/dcgan/dcgan.py&quot;&gt;完整例子&lt;/a&gt;&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ol&gt;</content><author><name></name></author><summary type="html">是在看tf2.0的文档的时候，tutorial里没用training，导致我去翻例子，干脆把1.x也理一遍。</summary></entry></feed>

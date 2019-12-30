@@ -1,0 +1,118 @@
+<p>是在看tf2.0的文档的时候，tutorial里没用training，导致我去翻例子，干脆把1.x也理一遍。</p>
+
+<p>有空再补代码例子，因为是短时间稍微写了一下，不是很详细，有例子应该会清楚很多。</p>
+
+<h3 id="tldr">tl;dr</h3>
+
+<p>总共就这么短就没有tldr了。。</p>
+
+<p>简单说就是：</p>
+
+<blockquote>
+  <p>可以在构建图的时候静态指定training或者run session的时候传入placeholder</p>
+</blockquote>
+
+<p>只不过tf调用方式本身的多样性导致了问题的复杂，有空单独写一个tf调用方式的总结。</p>
+
+<h3 id="正文">正文</h3>
+
+<p>用keras时，不用关心，在fit和predict函数里自动设置。</p>
+
+<p>tf2.0 里keras的model.fit好像也支持dict类型的输入了，一般用fit就够了</p>
+
+<h3 id="tf-10-的两种接口">tf 1.0 的两种接口</h3>
+
+<ul>
+  <li>
+    <p>tf.nn.xx：</p>
+
+    <p>算子接口，不带变量，典型场景是使用下面第一种方式调用；</p>
+  </li>
+  <li>
+    <p>tf.layers.xx:</p>
+
+    <p>算子内生成变量，tf.layers.Xx只是keras.layers封装了一个名字；tf.layers.xx比较尴尬，调用的时候生成对应的算子对象然后apply，别用这类接口了，1.x高版本里大部分都被干掉了。目前全面移到tf.keras.layers.</p>
+
+    <p>看到<a href="https://github.com/aymericdamien/TensorFlow-Examples/blob/master/examples/3_NeuralNetworks/convolutional_network.py">有人</a>结合variable scope来用tf.layers.xx，不知道能不能复用。</p>
+
+    <p>看tf.keras的<a href="https://github.com/tensorflow/tensorflow/blob/r1.15/tensorflow/python/keras/engine/base_layer_utils.py#L63">源码(tf1.15)</a>，好像是不行，可能更早版本的tf.layers.xx不是用keras吧？</p>
+
+    <p>看了下<a href="https://github.com/tensorflow/tensorflow/blob/r1.4/tensorflow/python/layers/base.py#L453">tf1.4</a>还没集成keras的时候，确实是用的get_variable，有空再写个实验看看吧</p>
+  </li>
+  <li>
+    <p>tf.keras.layers.xx:</p>
+
+    <p>自带变量，training是个tensor，动态判断。手动训练的时候，在session里传入K.learning_phase()生成的placeholder</p>
+  </li>
+</ul>
+
+<h3 id="tf不同使用方式的mode指定方式">tf不同使用方式的mode指定方式</h3>
+
+<p>tf2.0的官方建议的<a href="https://medium.com/tensorflow/standardizing-on-keras-guidance-on-high-level-apis-in-tensorflow-2-0-bad2b04c819a">几种调用方式</a>，都是keras的，这里列一下更一般的方法。</p>
+
+<ol>
+  <li>
+    <p>variable scope</p>
+
+    <p>tf1的经典调用方式，虽然官方没有建议，但是一些老项目还是用的很多的，纯种tf调用方式。</p>
+
+    <ul>
+      <li>
+        <p>变量作用域都是用“tf语言”定义和管理的。</p>
+      </li>
+      <li>
+        <p>用get_variable(…, reuse=tf.AUTO_REUSE)的方式共享变量</p>
+      </li>
+      <li>
+        <p>为train和infer分别构建图，用共享变量来共享参数，在构造图时传training参数（这是一个python变量）静态指定</p>
+      </li>
+    </ul>
+
+    <p><strong>算子和变量是分离的</strong></p>
+
+    <p>和上面tf.layers.xx方式不同，算子和变量是分离的，可以用不同的参数构造任意个算子，并且共享变量。</p>
+  </li>
+  <li>
+    <p>object oriented</p>
+
+    <p>用python的对象来管理scope，把算子或者tf变量定义成类属性。</p>
+
+    <p>这种方式用现成的layers比较多，虽然也可以用定义tf变量的方式，但是搭tf.keras.layers使用，可以少写很多变量定义的代码。</p>
+
+    <p><strong>tf.layers.xx和tf.keras.layers里算子和变量是绑定的</strong></p>
+
+    <p>“用相同的一批算子，定义train和infer图”</p>
+
+    <p>有两种方式指定mode：</p>
+
+    <ul>
+      <li>
+        <p>train/infer混用图，在session.run的时候通过给training这个tensor（tf.keras.layers.xx根据K.learning_phase()定义行为）传入不同的值来动态指定“同一个算子”的不同行为</p>
+      </li>
+      <li>
+        <p>用相同的一批算子，分别定义train和infer图（和第一种vs类似），定义图的时候，算子的apply()函数可以静态指定training（python变量）。这种方式个人感觉只是比vs方式少写一点变量定义的代码。</p>
+      </li>
+    </ul>
+  </li>
+  <li>
+    <p>tf 2.0 eager模式</p>
+
+    <p>用默认的eager模式几乎和pytorch一样了，并且可以用tf.function加速，非常方便，除了库代码不好读。
+ 和pytorch的接口稍微有点区别，</p>
+
+    <ul>
+      <li>pytorch:
+        <div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code> <span class="n">model</span><span class="o">.</span><span class="n">train</span><span class="p">()</span>
+ <span class="o">...</span>
+</code></pre></div>        </div>
+      </li>
+      <li>tf2:
+        <div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code> <span class="n">model</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">training</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+</code></pre></div>        </div>
+      </li>
+    </ul>
+
+    <p>答应我一定要手动指定，不要只看官方手册，官方的example repo有<a href="https://github.com/tensorflow/examples/blob/master/tensorflow_examples/models/dcgan/dcgan.py">完整例子</a></p>
+  </li>
+</ol>
+

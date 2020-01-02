@@ -82,11 +82,15 @@
 
     <p>看到<a href="https://github.com/aymericdamien/TensorFlow-Examples/blob/master/examples/3_NeuralNetworks/convolutional_network.py">有人</a>结合variable scope来用tf.layers.xx，不知道能不能复用。</p>
 
-    <p><strong>更正一下</strong></p>
+    <p><strong>再更正一下[2020-01-02]</strong></p>
 
-    <p>tf.keras.layers的add_weights会使用vs.get_variable,所以重进scope的时候，能获取之前定义的变量，实现参数共享。</p>
+    <p>tf.layers的add_weights调用tf.keras.engine.base_layer.Layer.add_weights会传入vs.get_variable, 所以重进scope的时候，能获取之前定义的变量，实现参数共享。</p>
+
+    <p>tf.keras.layers本身并不指定getter，也就是说用了vs也白搭，还是重新定义一个变量。所以能否用vs共享参数应该是tf.layers.Xx和tf.keras.Layers.Xx不多的区别之一了吧。</p>
 
     <p>如果不手动定义vs的话，会新生成一个参数变量，按照重命名规则+’_1’</p>
+
+    <p>顺便提一嘴，scope关闭时，会重置所有名下变量计数，这样重进时就会获取之前定义的变量，而不是重新定义一个新的。</p>
   </li>
   <li>
     <p>tf.keras.layers.xx:</p>

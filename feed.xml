@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="3.8.6">Jekyll</generator><link href="https://k0kutou.github.io/feed.xml" rel="self" type="application/atom+xml" /><link href="https://k0kutou.github.io/" rel="alternate" type="text/html" /><updated>2019-12-30T21:52:21+08:00</updated><id>https://k0kutou.github.io/feed.xml</id><title type="html">Under the oceans</title><subtitle>A place for shower thoughts and memos.</subtitle><entry><title type="html">tf mode 指定方式</title><link href="https://k0kutou.github.io/tf/2019/12/27/tf-mode-config.html" rel="alternate" type="text/html" title="tf mode 指定方式" /><published>2019-12-27T22:28:17+08:00</published><updated>2019-12-27T22:28:17+08:00</updated><id>https://k0kutou.github.io/tf/2019/12/27/tf-mode-config</id><content type="html" xml:base="https://k0kutou.github.io/tf/2019/12/27/tf-mode-config.html">&lt;p&gt;是在看tf2.0的文档的时候，tutorial里没用training，导致我去翻例子，干脆把1.x也理一遍。&lt;/p&gt;
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="3.8.6">Jekyll</generator><link href="https://k0kutou.github.io/feed.xml" rel="self" type="application/atom+xml" /><link href="https://k0kutou.github.io/" rel="alternate" type="text/html" /><updated>2020-01-02T12:15:03+08:00</updated><id>https://k0kutou.github.io/feed.xml</id><title type="html">Under the oceans</title><subtitle>A place for shower thoughts and memos.</subtitle><entry><title type="html">tf from 0.0 to 2.0</title><link href="https://k0kutou.github.io/tf/2020/01/02/tf-from-0.0-to-2.0.html" rel="alternate" type="text/html" title="tf from 0.0 to 2.0" /><published>2020-01-02T11:16:00+08:00</published><updated>2020-01-02T11:16:00+08:00</updated><id>https://k0kutou.github.io/tf/2020/01/02/tf-from-0.0-to-2.0</id><content type="html" xml:base="https://k0kutou.github.io/tf/2020/01/02/tf-from-0.0-to-2.0.html">&lt;p&gt;重构代码的时候想到要把参考文献记下来，先开一篇，挖个坑&lt;/p&gt;</content><author><name></name></author><summary type="html">重构代码的时候想到要把参考文献记下来，先开一篇，挖个坑</summary></entry><entry><title type="html">tf mode 指定方式</title><link href="https://k0kutou.github.io/tf/2019/12/27/tf-mode-config.html" rel="alternate" type="text/html" title="tf mode 指定方式" /><published>2019-12-27T22:28:17+08:00</published><updated>2019-12-27T22:28:17+08:00</updated><id>https://k0kutou.github.io/tf/2019/12/27/tf-mode-config</id><content type="html" xml:base="https://k0kutou.github.io/tf/2019/12/27/tf-mode-config.html">&lt;p&gt;是在看tf2.0的文档的时候，tutorial里没用training，导致我去翻例子，干脆把1.x也理一遍。&lt;/p&gt;
 
 &lt;p&gt;有空再补代码例子，因为是短时间稍微写了一下，不是很详细，有例子应该会清楚很多。&lt;/p&gt;
 
@@ -35,11 +35,15 @@
 
     &lt;p&gt;看到&lt;a href=&quot;https://github.com/aymericdamien/TensorFlow-Examples/blob/master/examples/3_NeuralNetworks/convolutional_network.py&quot;&gt;有人&lt;/a&gt;结合variable scope来用tf.layers.xx，不知道能不能复用。&lt;/p&gt;
 
-    &lt;p&gt;&lt;strong&gt;更正一下&lt;/strong&gt;&lt;/p&gt;
+    &lt;p&gt;&lt;strong&gt;再更正一下[2020-01-02]&lt;/strong&gt;&lt;/p&gt;
 
-    &lt;p&gt;tf.keras.layers的add_weights会使用vs.get_variable,所以重进scope的时候，能获取之前定义的变量，实现参数共享。&lt;/p&gt;
+    &lt;p&gt;tf.layers的add_weights调用tf.keras.engine.base_layer.Layer.add_weights会传入vs.get_variable, 所以重进scope的时候，能获取之前定义的变量，实现参数共享。&lt;/p&gt;
+
+    &lt;p&gt;tf.keras.layers本身并不指定getter，也就是说用了vs也白搭，还是重新定义一个变量。所以能否用vs共享参数应该是tf.layers.Xx和tf.keras.Layers.Xx不多的区别之一了吧。&lt;/p&gt;
 
     &lt;p&gt;如果不手动定义vs的话，会新生成一个参数变量，按照重命名规则+’_1’&lt;/p&gt;
+
+    &lt;p&gt;顺便提一嘴，scope关闭时，会重置所有名下变量计数，这样重进时就会获取之前定义的变量，而不是重新定义一个新的。&lt;/p&gt;
   &lt;/li&gt;
   &lt;li&gt;
     &lt;p&gt;tf.keras.layers.xx:&lt;/p&gt;
